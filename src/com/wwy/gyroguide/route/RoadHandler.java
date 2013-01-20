@@ -169,11 +169,9 @@ public class RoadHandler extends AsyncTask<Void,Void,Void> {
 		return herkenningspunten;
 	}
 	public GeoPoint getCurrentDestination() {
-		if(mCurrentDestinationIndex < mRoad.mNodes.size()) {
+		if(mRoad != null && mCurrentDestinationIndex < mRoad.mNodes.size()) 
 			return mRoad.mNodes.get(mCurrentDestinationIndex).mLocation;
-		} else {
 			return null;
-		}
 	}
 
 	@Override
