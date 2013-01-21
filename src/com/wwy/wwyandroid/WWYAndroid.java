@@ -488,4 +488,9 @@ public class WWYAndroid extends Activity {
 			return false;
 		}
 	}
+	public void onResume() {
+		super.onResume();
+		writeModeOn();
+	}
+
 }
