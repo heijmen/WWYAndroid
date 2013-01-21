@@ -1,5 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/menu_settings"
-        android:title="@string/menu_settings"
-        android:orderInCategory="100" />
+    <item android:id="@+id/item1" android:title="Verwijder gegevens"></item>
+    <item android:id="@+id/item2" android:title="Fake Location"></item>
+    <item android:id="@+id/item3" android:title="Pulse 5x"></item>
+    <item android:id="@+id/item4" android:title="kitt5x"></item>
+    <item android:id="@+id/item5" android:title="stoproute"></item>
 </menu>

@@ -6,7 +6,9 @@ import java.io.UnsupportedEncodingException;
 import org.osmdroid.util.GeoPoint;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Criteria;
@@ -22,6 +24,7 @@ import android.os.Handler;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager.LayoutParams;
@@ -56,7 +59,7 @@ public class WWYAndroid extends Activity {
 	private Handler mLedHandler = new Handler();
 	private Handler mRoadUpdateHander = new Handler();
 	private Vibrator mVibrator;
-
+	private boolean first = true;
 	private TextView led1;
 	private TextView led2;
 	private TextView led3;
@@ -70,6 +73,7 @@ public class WWYAndroid extends Activity {
 	private DatabaseHandler mDatabaseHandler;
 
 	private Button herkenningspuntButton;
+	private int timesPulse = 0;
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -86,22 +90,20 @@ public class WWYAndroid extends Activity {
 		mVibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 		pijlView = (DrawView) findViewById(R.id.pijlView);
 		startComponents();
-//		kitt(4);
+		//		kitt(4);
 		herkenningspuntButton = (Button) findViewById(R.id.buttonHerkenningspunt);
 		herkenningspuntButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-			//	startRoute(fakeDestination);
-				mVibrator.vibrate(500);
-				mDatabaseHandler.addHerkenningPunt(mLocationListener.getCurrentLocation());
+				//	startRoute(fakeDestination);
+					mVibrator.vibrate(500);
+					mDatabaseHandler.addHerkenningPunt(mLocationListener.getCurrentLocation());
+				//	pulseRedLed(5);
 			}
 		});
 		mDatabaseHandler = new DatabaseHandler(this, "WwyAndroidDaba", 1);
 
 	}
-	/**
-	 * hoever is van 0 tot 100. 100 is zeg maar helemaal vol naar rechts en 1 niet zover
-	 * @param hoever
-	 */
+
 	private void rechtsLed(int hoever) {
 		redLeds();
 		if(hoever < 33) {
@@ -114,6 +116,42 @@ public class WWYAndroid extends Activity {
 			led6.setBackgroundColor(getResources().getColor(R.color.green));
 			led7.setBackgroundColor(getResources().getColor(R.color.green));
 		}
+	}
+
+	private void pulseRedLed(final int hoeveel) {
+		redLeds();
+		timesPulse = 0;
+		first = false;
+		final Handler handler = new Handler();
+		Runnable r = new Runnable() {
+			public void run() {
+				timesPulse++;
+				if(first) {
+					first = false;
+					greenLeds();
+				} else {
+					first = true;
+					redLeds();
+					handler.removeCallbacks(this);
+				}
+				if(timesPulse > hoeveel * 2) {
+					handler.removeCallbacks(this);
+					return;
+				}
+				handler.postDelayed(this, 250);
+			}
+		};
+		r.run();
+	}
+
+	private void greenLeds() {
+		led1.setBackgroundColor(getResources().getColor(R.color.green));
+		led2.setBackgroundColor(getResources().getColor(R.color.green));
+		led3.setBackgroundColor(getResources().getColor(R.color.green));
+		led4.setBackgroundColor(getResources().getColor(R.color.green));
+		led5.setBackgroundColor(getResources().getColor(R.color.green));
+		led6.setBackgroundColor(getResources().getColor(R.color.green));
+		led7.setBackgroundColor(getResources().getColor(R.color.green));
 	}
 
 	private void linksLed(int hoever) {
@@ -254,7 +292,7 @@ public class WWYAndroid extends Activity {
 			rechtdoorLed();
 		}
 	}
-	
+
 	private void startRoute(GeoPoint destination) {
 		Log.e("TA","com ik hier");
 		mRoadHandler = new RoadHandler(mLocationListener, destination, mDatabaseHandler, new RoadHandlerListener() {
@@ -309,12 +347,14 @@ public class WWYAndroid extends Activity {
 
 	@Override
 	protected void onNewIntent(Intent intent){
+		pulseRedLed(5);
 		Log.i("NFC", "KOM IK HIER");
 		if(NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction())){
+			startRoute(fakeDestination);
 			Log.i("NFC", "KOM IK HIER2");
 
 			locationTag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);    
-			String s = readTag(locationTag);
+			final String s = readTag(locationTag);
 			if (s == null) {
 				Log.i("NFC", "KOM IK HIER3");
 
@@ -324,16 +364,14 @@ public class WWYAndroid extends Activity {
 
 				if (s.contains(":D")) {
 					Log.i("NFC", "KOM IK HIER5");
-
-					startRoute(new GeoPoint(
-							Double.parseDouble(s.split(":D")[1].split(",")[0]), 
-							Double.parseDouble(s.split(":D")[1].split(",")[1].split(":D")[0])));
-				} else {
-					Log.i("NFC", "KOM IK HIER6");
-
-					GeoPoint location = mLocationListener.getCurrentLocation();
-					writeTag(locationTag, location.getLatitudeE6() / 1E6 + "," + location.getLongitudeE6() / 1E6);
-				}
+					
+				} 
+//				} else {
+//					Log.i("NFC", "KOM IK HIER6");
+//
+//					GeoPoint location = mLocationListener.getCurrentLocation();
+//					writeTag(locationTag, location.getLatitudeE6() / 1E6 + "," + location.getLongitudeE6() / 1E6);
+//				}
 			}
 		}
 	}
@@ -412,5 +450,42 @@ public class WWYAndroid extends Activity {
 			angle += 360; 
 		}
 		return angle;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) { 
+		switch (item.getItemId()) {
+		case R.id.item1:
+			new AlertDialog.Builder(this)
+			.setIcon(android.R.drawable.ic_dialog_alert)
+			.setTitle("Verwijder gegevens")
+			.setMessage("Deze optie is bedoeld om de herkenningspunten te resetten.")
+			.setPositiveButton("Ja", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialogInterface, int arg1) {
+					mDatabaseHandler.deleteCrumbs();
+					mDatabaseHandler.deleteHerkenningsPunten();
+				}
+			})
+			.setNegativeButton("Annuleren", null)
+			.show();
+			return true;
+		case R.id.item2 :
+			startRoute(fakeDestination);
+			return true;
+		case R.id.item3 :
+			pulseRedLed(5);
+			return true;
+		case R.id.item4 :
+			kitt(5);
+			return true;
+		case R.id.item5 :
+			stopUpdatingRoad();
+			if(mRoadHandler != null) {
+				mRoadHandler.stopRoute();
+			}
+			return true;
+		default:
+			return false;
+		}
 	}
 }

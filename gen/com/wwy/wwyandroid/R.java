@@ -24,6 +24,11 @@ public final class R {
     }
     public static final class id {
         public static final int buttonHerkenningspunt=0x7f080009;
+        public static final int item1=0x7f08000a;
+        public static final int item2=0x7f08000b;
+        public static final int item3=0x7f08000c;
+        public static final int item4=0x7f08000d;
+        public static final int item5=0x7f08000e;
         public static final int knoppenPaneel=0x7f080000;
         public static final int led1=0x7f080001;
         public static final int led2=0x7f080002;
@@ -32,7 +37,6 @@ public final class R {
         public static final int led5=0x7f080005;
         public static final int led6=0x7f080006;
         public static final int led7=0x7f080007;
-        public static final int menu_settings=0x7f08000a;
         public static final int pijlView=0x7f080008;
     }
     public static final class layout {
