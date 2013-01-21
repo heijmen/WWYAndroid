@@ -413,4 +413,11 @@ public class WWYAndroid extends Activity {
 		}
 		return angle;
 	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		writeModeOn();
+	}
+
 }
