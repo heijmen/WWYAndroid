@@ -86,11 +86,13 @@ public class WWYAndroid extends Activity {
 		mVibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 		pijlView = (DrawView) findViewById(R.id.pijlView);
 		startComponents();
-		kitt(4);
+//		kitt(4);
 		herkenningspuntButton = (Button) findViewById(R.id.buttonHerkenningspunt);
 		herkenningspuntButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				startRoute(fakeDestination);
+			//	startRoute(fakeDestination);
+				mVibrator.vibrate(500);
+				mDatabaseHandler.addHerkenningPunt(mLocationListener.getCurrentLocation());
 			}
 		});
 		mDatabaseHandler = new DatabaseHandler(this, "WwyAndroidDaba", 1);
@@ -145,7 +147,7 @@ public class WWYAndroid extends Activity {
 				drawImage(heijmething);
 				drawRichtingLeds();
 			}
-			mRoadUpdateHander.postDelayed(this, 200);
+			mRoadUpdateHander.postDelayed(this, 50);
 		}
 	};
 
@@ -227,7 +229,7 @@ public class WWYAndroid extends Activity {
 
 	private void sendGyroDirection(GeoPoint waypoint) {
 		int direction = (int) getAngleBetweenGeoPoints(mLocationListener.getCurrentLocation(), waypoint, mKompas.getAzimuth());
-		if(direction > 90 && direction < 270) {
+		if(direction > 110 && direction < 250) {
 			redLeds();
 			return;
 		}
@@ -240,7 +242,7 @@ public class WWYAndroid extends Activity {
 			rechtsLed(2);
 		} else if(direction < 68) {
 			rechtsLed(50);
-		} else if(direction < 90) {
+		} else if(direction < 110) {
 			rechtsLed(70);
 		} else if(direction < 292.5) {
 			linksLed(90);
