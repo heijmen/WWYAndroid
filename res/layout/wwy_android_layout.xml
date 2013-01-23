@@ -74,13 +74,6 @@
                 android:layout_weight="1"
                 android:background="@color/red" />
         </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="@color/gayblue"
-            android:text="Hier komt progressbar latar" />
         
         <com.wwy.gyroguide.route.DrawView 
             android:id="@+id/pijlView"
@@ -88,6 +81,7 @@
             android:layout_height="300dp"/>
         
         <Button
+            android:layout_marginTop="10dp"
             android:id="@+id/buttonHerkenningspunt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

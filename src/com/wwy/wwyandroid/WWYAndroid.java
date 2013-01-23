@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Criteria;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
 import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -30,6 +31,7 @@ import android.view.View.OnClickListener;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.wwy.gyroguide.database.DatabaseHandler;
 import com.wwy.gyroguide.route.DrawView;
@@ -50,6 +52,8 @@ public class WWYAndroid extends Activity {
 	private IntentFilter writeTagFilters[];
 	private Tag locationTag;
 	private NfcAdapter nfcAdapter;
+	
+	private ConnectivityManager mConnectivityManager;
 
 	private RoadHandler mRoadHandler;
 
@@ -78,6 +82,7 @@ public class WWYAndroid extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.wwy_android_layout);
+		mConnectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 		getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 		led1 = (TextView) findViewById(R.id.led1);
 		led2 = (TextView) findViewById(R.id.led2);
@@ -117,7 +122,7 @@ public class WWYAndroid extends Activity {
 			led7.setBackgroundColor(getResources().getColor(R.color.green));
 		}
 	}
-
+	
 	private void pulseRedLed(final int hoeveel) {
 		redLeds();
 		timesPulse = 0;
@@ -145,33 +150,47 @@ public class WWYAndroid extends Activity {
 	}
 
 	private void greenLeds() {
-		led1.setBackgroundColor(getResources().getColor(R.color.green));
-		led2.setBackgroundColor(getResources().getColor(R.color.green));
-		led3.setBackgroundColor(getResources().getColor(R.color.green));
-		led4.setBackgroundColor(getResources().getColor(R.color.green));
-		led5.setBackgroundColor(getResources().getColor(R.color.green));
-		led6.setBackgroundColor(getResources().getColor(R.color.green));
-		led7.setBackgroundColor(getResources().getColor(R.color.green));
+		Handler handler = new Handler();
+		handler.postDelayed(new Runnable() {
+			public void run() {
+				led1.setBackgroundColor(getResources().getColor(R.color.green));
+				led2.setBackgroundColor(getResources().getColor(R.color.green));
+				led3.setBackgroundColor(getResources().getColor(R.color.green));
+				led4.setBackgroundColor(getResources().getColor(R.color.green));
+				led5.setBackgroundColor(getResources().getColor(R.color.green));
+				led6.setBackgroundColor(getResources().getColor(R.color.green));
+				led7.setBackgroundColor(getResources().getColor(R.color.green));
+			}
+		}, 0);
 	}
 
-	private void linksLed(int hoever) {
-		redLeds();
-		if(hoever < 33) {
-			led3.setBackgroundColor(getResources().getColor(R.color.green));
-		} else if (hoever < 66) {
-			led3.setBackgroundColor(getResources().getColor(R.color.green));
-			led2.setBackgroundColor(getResources().getColor(R.color.green));
-		} else {
-			led3.setBackgroundColor(getResources().getColor(R.color.green));
-			led2.setBackgroundColor(getResources().getColor(R.color.green));
-			led1.setBackgroundColor(getResources().getColor(R.color.green));
-		}
+	private void linksLed(final int hoever) {
+		Handler handler = new Handler();
+		handler.postDelayed(new Runnable() {
+			public void run() {
+				redLeds();
+				if(hoever < 33) {
+					led3.setBackgroundColor(getResources().getColor(R.color.green));
+				} else if (hoever < 66) {
+					led3.setBackgroundColor(getResources().getColor(R.color.green));
+					led2.setBackgroundColor(getResources().getColor(R.color.green));
+				} else {
+					led3.setBackgroundColor(getResources().getColor(R.color.green));
+					led2.setBackgroundColor(getResources().getColor(R.color.green));
+					led1.setBackgroundColor(getResources().getColor(R.color.green));
+				}
+			}
+		}, 0);
 	}
 	private void rechtdoorLed() {
-		redLeds();
-		led3.setBackgroundColor(getResources().getColor(R.color.green));
-		led4.setBackgroundColor(getResources().getColor(R.color.green));
-		led5.setBackgroundColor(getResources().getColor(R.color.green));
+		Handler handler = new Handler();
+		handler.postDelayed(new Runnable() {
+			public void run() {
+				led3.setBackgroundColor(getResources().getColor(R.color.green));
+				led4.setBackgroundColor(getResources().getColor(R.color.green));
+				led5.setBackgroundColor(getResources().getColor(R.color.green));
+			}
+		}, 0);
 	}
 
 	private void startUpdatingRoad() {
@@ -191,7 +210,6 @@ public class WWYAndroid extends Activity {
 
 	private void kitt(final int aantal) {
 		timesKitt = 0;
-		redLeds();
 		Runnable r = new Runnable() {
 			public void run() {
 				redLeds();
@@ -292,9 +310,17 @@ public class WWYAndroid extends Activity {
 			rechtdoorLed();
 		}
 	}
-
+	
+	private boolean connectedToInternet() {
+		if(mConnectivityManager.getActiveNetworkInfo() != null && mConnectivityManager.getActiveNetworkInfo().isConnected()) {
+			return true;
+		} return false;
+	}
 	private void startRoute(GeoPoint destination) {
-		Log.e("TA","com ik hier");
+		if(!connectedToInternet()) {
+			Toast.makeText(this, "Geen internet verbinding", Toast.LENGTH_LONG).show();
+			return;
+		}
 		mRoadHandler = new RoadHandler(mLocationListener, destination, mDatabaseHandler, new RoadHandlerListener() {
 
 			public void onWayPointReached(GeoPoint newWayPoint) {
@@ -350,7 +376,7 @@ public class WWYAndroid extends Activity {
 		pulseRedLed(5);
 		Log.i("NFC", "KOM IK HIER");
 		if(NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction())){
-			startRoute(fakeDestination);
+			//startRoute(fakeDestination);
 			Log.i("NFC", "KOM IK HIER2");
 
 			locationTag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);    
@@ -364,7 +390,9 @@ public class WWYAndroid extends Activity {
 
 				if (s.contains(":D")) {
 					Log.i("NFC", "KOM IK HIER5");
-					
+					startRoute(new GeoPoint(
+							Double.parseDouble(s.split(":D")[1].split(",")[0]),
+							Double.parseDouble(s.split(":D")[1].split(",")[1].split(":D")[0])));
 				} 
 //				} else {
 //					Log.i("NFC", "KOM IK HIER6");
@@ -393,7 +421,7 @@ public class WWYAndroid extends Activity {
 		} catch (FormatException e) {
 			e.printStackTrace();
 		}
-		Log.e("Ta", s);
+		//Log.e("Ta", s);
 		return s;
 	}
 
