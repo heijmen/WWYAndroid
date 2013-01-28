@@ -20,8 +20,7 @@ public class GPSHandler {
 		return results[0];
 	}
 
-	public static boolean locationExistsInRange(int range, GeoPoint newLocation, 
-			List<GeoPoint> allLocations) {
+	public static boolean locationExistsInRange(int range, GeoPoint newLocation, List<GeoPoint> allLocations) {
 		for (GeoPoint oldLocation : allLocations) {
 			if (distanceBetween(newLocation, oldLocation) <= range) {
 				return true;
@@ -29,6 +28,4 @@ public class GPSHandler {
 		}
 		return false;
 	}
-
-
 }

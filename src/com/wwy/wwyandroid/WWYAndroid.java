@@ -7,6 +7,7 @@ import org.osmdroid.util.GeoPoint;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -20,10 +21,11 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.Ndef;
+import android.nfc.tech.NdefFormatable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Vibrator;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -31,7 +33,6 @@ import android.view.View.OnClickListener;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.wwy.gyroguide.database.DatabaseHandler;
 import com.wwy.gyroguide.route.DrawView;
@@ -43,22 +44,16 @@ import eu.uniek.compas.KompasListener;
 import eu.uniek.gps.GPSLocationListener;
 
 public class WWYAndroid extends Activity {
-
 	private LocationManager mLocationManager;
 	private GPSLocationListener mLocationListener;
 	private Kompas mKompas;
-
 	private PendingIntent pendingIntent;
 	private IntentFilter writeTagFilters[];
 	private Tag locationTag;
 	private NfcAdapter nfcAdapter;
-	
 	private ConnectivityManager mConnectivityManager;
-
 	private RoadHandler mRoadHandler;
-
 	private GeoPoint fakeDestination = new GeoPoint(52.100811,5.111536);
-
 	private int led = 0;
 	private Handler mLedHandler = new Handler();
 	private Handler mRoadUpdateHander = new Handler();
@@ -71,13 +66,12 @@ public class WWYAndroid extends Activity {
 	private TextView led5;
 	private TextView led6;
 	private TextView led7;
-
 	private DrawView pijlView;
 	private int timesKitt = 0;
 	private DatabaseHandler mDatabaseHandler;
-
 	private Button herkenningspuntButton;
 	private int timesPulse = 0;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -91,18 +85,15 @@ public class WWYAndroid extends Activity {
 		led5 = (TextView) findViewById(R.id.led5);
 		led6 = (TextView) findViewById(R.id.led6);
 		led7 = (TextView) findViewById(R.id.led7);
-
 		mVibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 		pijlView = (DrawView) findViewById(R.id.pijlView);
 		startComponents();
-		//		kitt(4);
 		herkenningspuntButton = (Button) findViewById(R.id.buttonHerkenningspunt);
 		herkenningspuntButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				//	startRoute(fakeDestination);
-					mVibrator.vibrate(500);
-					mDatabaseHandler.addHerkenningPunt(mLocationListener.getCurrentLocation());
-				//	pulseRedLed(5);
+				mVibrator.vibrate(500);
+				mDatabaseHandler.addHerkenningPunt(mLocationListener.getCurrentLocation());
+				pulseRedLed(5);
 			}
 		});
 		mDatabaseHandler = new DatabaseHandler(this, "WwyAndroidDaba", 1);
@@ -122,7 +113,7 @@ public class WWYAndroid extends Activity {
 			led7.setBackgroundColor(getResources().getColor(R.color.green));
 		}
 	}
-	
+
 	private void pulseRedLed(final int hoeveel) {
 		redLeds();
 		timesPulse = 0;
@@ -200,15 +191,15 @@ public class WWYAndroid extends Activity {
 	Runnable updateRoadRunnable = new Runnable() {
 		public void run() {
 			if(mRoadHandler != null && mRoadHandler.getCurrentDestination() != null && mLocationListener.getCurrentLocation() != null) {
-				int heijmething = (int) getAngleBetweenGeoPoints(mLocationListener.getCurrentLocation(), mRoadHandler.getCurrentDestination(), mKompas.getAzimuth());
-				drawImage(heijmething);
+				int relativeDirection = (int) getAngleBetweenGeoPoints(mLocationListener.getCurrentLocation(), mRoadHandler.getCurrentDestination(), mKompas.getAzimuth());
+				drawImage(relativeDirection);
 				drawRichtingLeds();
 			}
 			mRoadUpdateHander.postDelayed(this, 50);
 		}
 	};
 
-	private void kitt(final int aantal) {
+	public void kitt(final int aantal) {
 		timesKitt = 0;
 		Runnable r = new Runnable() {
 			public void run() {
@@ -252,6 +243,7 @@ public class WWYAndroid extends Activity {
 		startKompas();
 		startNfc();
 	}
+
 	private void startNfc() {
 		nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 		pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
@@ -262,21 +254,13 @@ public class WWYAndroid extends Activity {
 
 	private void startKompas() {
 		mKompas = new Kompas(this, new KompasListener() {
-			public void onSensorChanged(float azimuth) {
-				//				if(mRoadHandler != null && mRoadHandler.getCurrentDestination() != null) { 
-				//					pijlView.updateArrow((int) azimuth);
-				//				}
-			}
+			public void onSensorChanged(float azimuth) {}
 		});
 		mKompas.startListening();
 	}
 
-	public void drawImage(int heijmething) {
-		//	DrawView drawView = (DrawView) findViewById(R.id.drawView1);
-		//	drawView.setBackgroundColor(Color.WHITE);
-		//	int heijmething = (int) getAngleBetweenGeoPoints(startPoint, endPoint, azimuth);
-		//	drawView.drawTheThing(heijmething);  
-		pijlView.updateArrow(heijmething);
+	public void drawImage(int relativeDirection) {
+		pijlView.updateArrow(relativeDirection);
 	}
 
 	private void drawRichtingLeds() {
@@ -310,38 +294,46 @@ public class WWYAndroid extends Activity {
 			rechtdoorLed();
 		}
 	}
-	
+
 	private boolean connectedToInternet() {
 		if(mConnectivityManager.getActiveNetworkInfo() != null && mConnectivityManager.getActiveNetworkInfo().isConnected()) {
 			return true;
-		} return false;
+		} 
+		return false;
 	}
+
 	private void startRoute(GeoPoint destination) {
 		if(!connectedToInternet()) {
-			Toast.makeText(this, "Geen internet verbinding", Toast.LENGTH_LONG).show();
 			return;
 		}
-		mRoadHandler = new RoadHandler(mLocationListener, destination, mDatabaseHandler, new RoadHandlerListener() {
+		startRouteHandler(destination);
+		startUpdatingRoad();
+	}
 
+	private void startRouteHandler(GeoPoint destination) {
+		mRoadHandler = new RoadHandler(mLocationListener, destination, mDatabaseHandler, new RoadHandlerListener() {
 			public void onWayPointReached(GeoPoint newWayPoint) {
 				mVibrator.vibrate(1000);
 			}
-
 			public void onRouteStart(GeoPoint firstWayPoint) {
 				mVibrator.vibrate(1000);
 			}
-
 			public void onDestinationReached() {
-				mVibrator.vibrate(5000);
-				kitt(5);
-				stopUpdatingRoad();
+				destinationReached();
 			}
-
 		});
-		startUpdatingRoad();
 	}
+
 	private void stopUpdatingRoad() {
 		mRoadUpdateHander.removeCallbacks(updateRoadRunnable);
+	}
+
+	private void destinationReached() {
+		mVibrator.vibrate(5000);
+		if (Looper.myLooper() == Looper.getMainLooper()) {
+			kitt(5);
+		}
+		stopUpdatingRoad();
 	}
 
 	@Override
@@ -353,9 +345,9 @@ public class WWYAndroid extends Activity {
 	private void startGps() {
 		mLocationListener = new GPSLocationListener();
 		mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-		Criteria c = new Criteria();
-		c.setAccuracy(Criteria.ACCURACY_FINE);
-		String provider = mLocationManager.getBestProvider(c, true);
+		Criteria criteria = new Criteria();
+		criteria.setAccuracy(Criteria.ACCURACY_FINE);
+		String provider = mLocationManager.getBestProvider(criteria, true);
 		mLocationManager.requestLocationUpdates(provider, 500, 1, mLocationListener);
 	}
 
@@ -373,47 +365,47 @@ public class WWYAndroid extends Activity {
 
 	@Override
 	protected void onNewIntent(Intent intent){
-		pulseRedLed(5);
-		Log.i("NFC", "KOM IK HIER");
+		pulseRedLed(3);
 		if(NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction())){
-			//startRoute(fakeDestination);
-			Log.i("NFC", "KOM IK HIER2");
-
 			locationTag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);    
-			final String s = readTag(locationTag);
-			if (s == null) {
-				Log.i("NFC", "KOM IK HIER3");
+			final String nfcMessage = readTag(locationTag);
+			scannedNfc(locationTag,nfcMessage);
+		}
+	}
 
-				//TODO XXX FIXME tag is not formatted
+	private void scannedNfc(Tag locationTag2, String nfcMessage) {
+		if (nfcMessage == null) {
+			formatTag(getLocation(),locationTag);
+		} else {
+			if (nfcMessage.contains(":D")) {
+				startRoute(nfcMessage);
 			} else {
-				Log.i("NFC", "KOM IK HIER4");
-
-				if (s.contains(":D")) {
-					Log.i("NFC", "KOM IK HIER5");
-					startRoute(new GeoPoint(
-							Double.parseDouble(s.split(":D")[1].split(",")[0]),
-							Double.parseDouble(s.split(":D")[1].split(",")[1].split(":D")[0])));
-				} 
-//				} else {
-//					Log.i("NFC", "KOM IK HIER6");
-//
-//					GeoPoint location = mLocationListener.getCurrentLocation();
-//					writeTag(locationTag, location.getLatitudeE6() / 1E6 + "," + location.getLongitudeE6() / 1E6);
-//				}
+				writeTag(locationTag, getLocation());
 			}
 		}
 	}
 
+	private void startRoute(String nfcMessage) {
+		double latitude = Double.parseDouble(nfcMessage.split(":D")[1].split(",")[0]);
+		double longitude = Double.parseDouble(nfcMessage.split(":D")[1].split(",")[1].split(":D")[0]); 
+		GeoPoint geoPoint = new GeoPoint(latitude,longitude);
+		startRoute(geoPoint);
+	}
+
+	private String getLocation() {
+		GeoPoint location = mLocationListener.getCurrentLocation();
+		return location.getLatitudeE6() / 1E6 + "," + location.getLongitudeE6() / 1E6;		
+	}
+
 	private String readTag(Tag tag) {
-		locationTag = tag;
-		String s = "";
+		String result = "";
 		try {
-			if(locationTag!=null) {
-				NdefMessage m = read(locationTag);
-				if (m != null) {
-					s = new String(m.toByteArray());
+			if(tag != null) {
+				NdefMessage ndefMessage = read(tag);
+				if (ndefMessage != null) {
+					result = new String(ndefMessage.toByteArray());
 				} else {
-					s = null;
+					result = null; //Not formatted
 				}
 			}
 		} catch (IOException e) {
@@ -421,8 +413,7 @@ public class WWYAndroid extends Activity {
 		} catch (FormatException e) {
 			e.printStackTrace();
 		}
-		//Log.e("Ta", s);
-		return s;
+		return result;
 	}
 
 	private NdefMessage read(Tag tag) throws IOException, FormatException {
@@ -431,17 +422,15 @@ public class WWYAndroid extends Activity {
 			return null;
 		}
 		ndef.connect();
-		NdefMessage message2 = ndef.getNdefMessage();
+		NdefMessage message = ndef.getNdefMessage();
 		ndef.close();
-
-		return message2;
+		return message;
 	}
 
 	public void writeTag(Tag tag, String location) {
-		locationTag = tag;
 		try {
-			if(locationTag!=null) {
-				write(":D" + location, locationTag);
+			if(tag != null) {
+				write(":D" + location + ":D", tag);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -457,6 +446,26 @@ public class WWYAndroid extends Activity {
 		ndef.connect();
 		ndef.writeNdefMessage(message);
 		ndef.close();
+	}
+	public void formatTag(String text, Tag tag) {
+		locationTag = tag;
+		try {
+			if(locationTag!=null) {
+				format(":D" + text + ":D", locationTag);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (FormatException e) {
+			e.printStackTrace();
+		}
+	}
+	private void format(String text, Tag tag) throws IOException, FormatException {
+		NdefRecord[] records = { createRecord(text) };
+		NdefMessage message = new NdefMessage(records);
+		NdefFormatable formatable = NdefFormatable.get(tag);
+		formatable.connect();
+		formatable.format(message);
+		formatable.close();
 	}
 
 	private NdefRecord createRecord(String text) throws UnsupportedEncodingException {
@@ -484,18 +493,7 @@ public class WWYAndroid extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) { 
 		switch (item.getItemId()) {
 		case R.id.item1:
-			new AlertDialog.Builder(this)
-			.setIcon(android.R.drawable.ic_dialog_alert)
-			.setTitle("Verwijder gegevens")
-			.setMessage("Deze optie is bedoeld om de herkenningspunten te resetten.")
-			.setPositiveButton("Ja", new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialogInterface, int arg1) {
-					mDatabaseHandler.deleteCrumbs();
-					mDatabaseHandler.deleteHerkenningsPunten();
-				}
-			})
-			.setNegativeButton("Annuleren", null)
-			.show();
+			resetHerinneringspunten();
 			return true;
 		case R.id.item2 :
 			startRoute(fakeDestination);
@@ -516,9 +514,23 @@ public class WWYAndroid extends Activity {
 			return false;
 		}
 	}
+	private void resetHerinneringspunten() {
+		Builder builder = new AlertDialog.Builder(this);
+		builder.setIcon(android.R.drawable.ic_dialog_alert);
+		builder.setTitle("Verwijder gegevens");
+		builder.setMessage("Deze optie is bedoeld om de herkenningspunten te resetten.");
+		builder.setPositiveButton("Ja", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialogInterface, int arg1) {
+				mDatabaseHandler.deleteCrumbs();
+				mDatabaseHandler.deleteHerkenningsPunten();
+			}
+		});
+		builder.setNegativeButton("Annuleren", null);
+		builder.show();
+	}
+
 	public void onResume() {
 		super.onResume();
 		writeModeOn();
 	}
-
 }

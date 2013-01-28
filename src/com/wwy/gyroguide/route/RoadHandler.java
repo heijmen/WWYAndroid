@@ -51,7 +51,6 @@ public class RoadHandler extends AsyncTask<Void,Void,Void> {
 			stopRoute();
 			return;
 		}
-
 		if(GPSHandler.distanceBetween(mLocationListener.getCurrentLocation(), getCurrentDestination()) < ALLOWED_DISTANCE) {
 			mAnotherRoadHanderListener.onWayPointReached(getCurrentDestination());
 			mCurrentDestinationIndex++;
@@ -62,10 +61,8 @@ public class RoadHandler extends AsyncTask<Void,Void,Void> {
 		RoadManager roadManager = new GoogleRoadManager();
 		roadManager.addRequestOption("mode=walking");
 		ArrayList<GeoPoint> waypoints = new ArrayList<GeoPoint>();
-
 		waypoints.add(mLocationListener.getCurrentLocation()); 
 		waypoints.add(mDestination);
-
 		if(!mBreadcrumbs.isEmpty() || !mHerkenningspunten.isEmpty()) {
 			int waypointCount = 1;
 			String waypointsRequestOption = "";
@@ -74,18 +71,18 @@ public class RoadHandler extends AsyncTask<Void,Void,Void> {
 			List<Integer> tempIndexes = new ArrayList<Integer>();
 			int iterations = 16;
 			if(!mHerkenningspunten.isEmpty()) {
-			for(int i = 0; i < iterations; i++) {
-				int index = r.nextInt(mHerkenningspunten.size());
-				if(!tempIndexes.contains(index)) {
-					if(waypointCount >= 8) {
-						break;
+				for(int i = 0; i < iterations; i++) {
+					int index = r.nextInt(mHerkenningspunten.size());
+					if(!tempIndexes.contains(index)) {
+						if(waypointCount >= 8) {
+							break;
+						}
+						waypointsRequestOption += "%7C";
+						waypointsRequestOption += geoPointAsString(mHerkenningspunten.get(index));
+						waypointCount++;
+						tempIndexes.add(index);
 					}
-					waypointsRequestOption += "%7C";
-					waypointsRequestOption += geoPointAsString(mHerkenningspunten.get(index));
-					waypointCount++;
-					tempIndexes.add(index);
 				}
-			}
 			}
 			if(!mBreadcrumbs.isEmpty()) {
 				List<Integer> temp_breacrumbindexes = new ArrayList<Integer>();
@@ -107,7 +104,6 @@ public class RoadHandler extends AsyncTask<Void,Void,Void> {
 			}
 			roadManager.addRequestOption(waypointsRequestOption);
 		}
-
 		mRoad = roadManager.getRoad(waypoints);
 		mCurrentDestinationIndex = 0;
 		if(getCurrentDestination() != null) {
@@ -119,12 +115,12 @@ public class RoadHandler extends AsyncTask<Void,Void,Void> {
 		return null;
 	}
 
-	protected String geoPointAsString(GeoPoint p){
+	protected String geoPointAsString(GeoPoint geoPoint){
 		StringBuffer result = new StringBuffer();
-		double d = p.getLatitudeE6()*1E-6;
-		result.append(Double.toString(d));
-		d = p.getLongitudeE6()*1E-6;
-		result.append("," + Double.toString(d));
+		double geoPointFloating = geoPoint.getLatitudeE6()*1E-6;
+		result.append(Double.toString(geoPointFloating));
+		geoPointFloating = geoPoint.getLongitudeE6()*1E-6;
+		result.append("," + Double.toString(geoPointFloating));
 		return result.toString();
 	}
 
@@ -137,13 +133,10 @@ public class RoadHandler extends AsyncTask<Void,Void,Void> {
 	}
 
 	private void setHerkenningsPuntenAndBreadcrumbs() {
-		int averagelat = (mLocationListener.getCurrentLocation().getLatitudeE6() + mDestination.getLatitudeE6()) / 2;
-		int avaragelon = (mLocationListener.getCurrentLocation().getLongitudeE6() +  mDestination.getLongitudeE6()) / 2; 
-
-		GeoPoint middle = new GeoPoint(averagelat, avaragelon);
-
+		int averageLatitude = (mLocationListener.getCurrentLocation().getLatitudeE6() + mDestination.getLatitudeE6()) / 2;
+		int avarageLongitude = (mLocationListener.getCurrentLocation().getLongitudeE6() +  mDestination.getLongitudeE6()) / 2; 
+		GeoPoint middle = new GeoPoint(averageLatitude, avarageLongitude);
 		float radius = GPSHandler.distanceBetween(mLocationListener.getCurrentLocation(),  mDestination) / 2 + 20;
-
 		this.mBreadcrumbs = getBreadcrumbsInRange(middle, radius);
 		this.mHerkenningspunten = getHerkenninspuntenInRange(middle, radius);
 	}
@@ -169,15 +162,14 @@ public class RoadHandler extends AsyncTask<Void,Void,Void> {
 		return herkenningspunten;
 	}
 	public GeoPoint getCurrentDestination() {
-		if(mRoad != null && mCurrentDestinationIndex < mRoad.mNodes.size()) 
+		if(mRoad != null && mCurrentDestinationIndex < mRoad.mNodes.size()) {
 			return mRoad.mNodes.get(mCurrentDestinationIndex).mLocation;
-			return null;
+		}
+		return null;
 	}
 
 	@Override
 	protected Void doInBackground(Void... arg0) {
 		return createRoute();
 	}
-
-
 }

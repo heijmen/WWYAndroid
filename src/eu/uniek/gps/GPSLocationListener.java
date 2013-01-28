@@ -19,7 +19,7 @@ public class GPSLocationListener implements LocationListener {
 
 	public GeoPoint getCurrentLocation() {
 		if(currentLocation == null) {
-			currentLocation = new GeoPoint(52.102149,5.107124);
+			currentLocation = new GeoPoint(52.102149,5.107124); // fake location
 		}
 		return currentLocation;
 	}
@@ -27,6 +27,4 @@ public class GPSLocationListener implements LocationListener {
 	public void setCurrentLocation(GeoPoint currentLocation) {
 		this.currentLocation = currentLocation;
 	}
-
-	
 }

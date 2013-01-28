@@ -7,8 +7,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 public class Kompas implements SensorEventListener {
-	
-	private float azimuth;
+	private float mAzimuth;
 	private SensorManager mSensorManager;
 	private Sensor mCompass;
 	private KompasListener mKompasListener;
@@ -19,23 +18,22 @@ public class Kompas implements SensorEventListener {
 		this.mKompasListener = kompasListener;
 	}
 	
-	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-	}
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
 	public void onSensorChanged(SensorEvent event) {
-		azimuth = event.values[0];
-		mKompasListener.onSensorChanged(azimuth);
+		mAzimuth = event.values[0];
+		mKompasListener.onSensorChanged(mAzimuth);
 	}
+	
 	public float getAzimuth() {
-		return azimuth;
+		return mAzimuth;
 	}
 	
 	public void startListening() {
 		mSensorManager.registerListener(this, mCompass, SensorManager.SENSOR_DELAY_NORMAL);
 	}
+
 	public void stopListening() {
 		mSensorManager.unregisterListener(this);
 	}
-	
-
 }

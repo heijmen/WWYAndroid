@@ -65,16 +65,16 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		} else {
 			geoPoints.clear();
 			String selectQuery = "SELECT  * FROM " + TABLE_LOCATIONS + " WHERE " + KEY_ID + " >= " + index + " AND " + KEY_ID + " <= " + (index + 1000);
-			SQLiteDatabase db = this.getWritableDatabase();
-			Cursor cursor = db.rawQuery(selectQuery, null);
+			SQLiteDatabase database = this.getWritableDatabase();
+			Cursor cursor = database.rawQuery(selectQuery, null);
 			if(cursor.moveToFirst()) {
 				do {
-					GeoPoint punt = new GeoPoint(cursor.getInt(2), cursor.getInt(1));
-					geoPoints.put(cursor.getInt(0), punt);
+					GeoPoint geoPoint = new GeoPoint(cursor.getInt(2), cursor.getInt(1));
+					geoPoints.put(cursor.getInt(0), geoPoint);
 				} while(cursor.moveToNext());
 			}
 			cursor.close();
-			db.close();
+			database.close();
 		}
 		return geoPoints.get(index);
 	}
@@ -94,8 +94,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 		Cursor cursor = db.rawQuery(selectQuery, null);
 		if(cursor.moveToFirst()) {
 			do {
-				GeoPoint punt = new GeoPoint(cursor.getInt(2), cursor.getInt(1));
-				herkenningPunten.add(punt);
+				GeoPoint geoPoint = new GeoPoint(cursor.getInt(2), cursor.getInt(1));
+				herkenningPunten.add(geoPoint);
 			} while(cursor.moveToNext());
 		}
 		cursor.close();
